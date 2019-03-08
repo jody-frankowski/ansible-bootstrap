@@ -1,0 +1,177 @@
+---
+
+- hosts: all
+  tasks:
+      - name: Install epel on CentOS/RedHat
+        yum: name={{ item }} state=present
+        when: ansible_os_family == "RedHat"
+        with_items:
+          - epel-release
+
+      - name: Install some essential packages on CentOS/RedHat
+        yum: name={{ item }} state=present
+        when: ansible_os_family == "RedHat"
+        with_items:
+          - atop
+          - bash
+          - bash-completion
+          - curl
+          - lsof
+          - mosh
+          - mtr
+          - python
+          - rsync
+          - strace
+          - sysstat
+          - tcpdump
+          - tmux
+          - the_silver_searcher
+          - vim
+
+      - name: Install some essential packages on CentOS/RedHat 7 or later
+        yum: name={{ item }} state=present
+        when: ansible_os_family == "RedHat" and ansible_distribution_major_version|int >= 7
+        with_items:
+          - python3
+
+      - name: Install some essential packages on CentOS/RedHat 6 or later
+        yum: name={{ item }} state=present
+        when: ansible_os_family == "RedHat" and ansible_distribution_major_version|int >= 6
+        with_items:
+          - perf
+
+      - name: Add archive repo for Debian 5
+        lineinfile: dest=/etc/apt/sources.list line="deb http://archive.debian.org/debian/ {{ item }} main contrib non-free"
+        when: ansible_os_family == "Debian" and ansible_distribution_major_version|int == 5
+        with_items:
+          - "lenny"
+          - "lenny-lts"
+
+      - name: Add archive repo for Debian 5 (backports)
+        lineinfile: dest=/etc/apt/sources.list line="deb http://archive.debian.org/debian-backports/ lenny-backports main contrib non-free"
+        when: ansible_os_family == "Debian" and ansible_distribution_major_version|int == 5
+
+      - name: Comment non-archive repo for Debian 5
+        replace: dest=/etc/apt/sources.list regexp="^([^#]*{{ item }}.*)" replace='#\1'
+        when: ansible_os_family == "Debian" and ansible_distribution_major_version|int == 5
+        with_items:
+          - "ftp.fr.debian.org"
+          - "security.debian.org"
+
+      - name: Disable release file expiration check on Debian 5
+        lineinfile: dest=/etc/apt/apt.conf.d/10-no-check-valid-until line='Acquire::Check-Valid-Until "0";' create=yes
+        when: ansible_os_family == "Debian" and ansible_distribution_major_version|int == 5
+
+      - name: Add archive repo for Debian 6
+        lineinfile: dest=/etc/apt/sources.list line="deb http://archive.debian.org/debian/ {{ item }} main contrib non-free"
+        when: ansible_os_family == "Debian" and ansible_distribution_major_version|int == 6
+        with_items:
+          - "squeeze"
+          - "squeeze-lts"
+
+      - name: Add archive repo for Debian 6 (backports)
+        lineinfile: dest=/etc/apt/sources.list line="deb http://archive.debian.org/debian-backports/ squeeze-backports main contrib non-free"
+        when: ansible_os_family == "Debian" and ansible_distribution_major_version|int == 6
+
+      - name: Comment non-archive repo for Debian 6
+        replace: dest=/etc/apt/sources.list regexp="^([^#]*{{ item }}.*)" replace='#\1'
+        when: ansible_os_family == "Debian" and ansible_distribution_major_version|int == 6
+        with_items:
+          - "ftp.fr.debian.org"
+          - "security.debian.org"
+
+      - name: Disable release file expiration check on Debian 6
+        lineinfile: dest=/etc/apt/apt.conf.d/10-no-check-valid-until line='Acquire::Check-Valid-Until "0";' create=yes
+        when: ansible_os_family == "Debian" and ansible_distribution_major_version|int == 6
+
+      - name: Install some essential packages on Debian
+        apt: name={{ item }} state=present update_cache=yes
+        when: ansible_os_family == "Debian"
+        with_items:
+          - atop
+          - bash
+          - bash-completion
+          - curl
+          - linux-tools
+          - lsof
+          - mtr-tiny
+          - python
+          - python3
+          - rsync
+          - strace
+          - sysstat
+          - tcpdump
+          - tmux
+          - vim
+
+      - name: Install some essential packages on Debian 7 or later
+        apt: name={{ item }} state=present
+        when: ansible_os_family == "Debian" and ansible_distribution_major_version|int >= 7
+        with_items:
+          - mosh
+
+      - name: Install some essential packages on Debian 8 or later
+        apt: name={{ item }} state=present
+        when: ansible_os_family == "Debian" and ansible_distribution_major_version|int >= 8
+        with_items:
+          - silversearcher-ag
+
+      - name: Install some essential packages on FreeBSD over 9.1
+        pkgng: name={{ item }} state=present
+        when: ansible_os_family == "FreeBSD" and ansible_distribution_release[0:3]|float >= 9.1
+        with_items:
+          - bash
+          - bash-completion
+          - curl
+          - lsof
+          - mosh
+          - mtr-nox11
+          - python
+          - python3
+          - rsync
+          - the_silver_searcher
+          - vim-lite
+
+      - name: Install some essential packages on FreeBSD under 9.1
+        shell: creates=/usr/local/{{ item.path }} export PACKAGESITE=http://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/$(uname -m)/$(uname -r | cut -d- -f 1)-RELEASE/packages/Latest/ ; pkg_add -r {{ item.name }}
+        when: ansible_os_family == "FreeBSD" and ansible_distribution_release[0:3]|float < 9.1
+        with_items:
+          - { path: 'bin/bash', name: 'bash'}
+          - { path: 'etc/bash_completion', name: 'bash-completion'}
+          - { path: 'bin/curl', name: 'curl'}
+          - { path: 'sbin/lsof', name: 'lsof'}
+          - { path: 'sbin/mtr', name: 'mtr-nox11'}
+          - { path: 'bin/rsync', name: 'rsync'}
+          - { path: 'bin/vim', name: 'vim-lite'}
+
+      - name: Add the OpenBSD mirror url for versions over or equal 5.8
+        lineinfile: dest=/etc/pkg.conf create=yes regexp="installpath" line="installpath = http://ftp.fr.openbsd.org/pub/OpenBSD/{{ ansible_kernel }}/packages/{{ ansible_machine }}/"
+        when: ansible_os_family == "OpenBSD" and ansible_distribution_release|float >= 5.8
+
+      - name: Add the OpenBSD mirror url for versions under 5.8
+        lineinfile: dest=/etc/pkg.conf create=yes regexp="installpath" line="installpath = http://ftp.eu.openbsd.org/pub/OpenBSD/{{ ansible_kernel }}/packages/{{ ansible_machine }}/"
+        when: ansible_os_family == "OpenBSD" and ansible_distribution_release|float < 5.8
+
+      - name: Install some essential packages on OpenBSD for all versions
+        openbsd_pkg: name={{ item }} state=present
+        when: ansible_os_family == "OpenBSD"
+        with_items:
+          - bash
+          - curl
+          - lsof
+          - mtr--
+          - python
+          - rsync--
+          - vim--no_x11
+
+      - name: Install some essential packages on OpenBSD for versions 5.4 or later
+        openbsd_pkg: name={{ item }} state=present
+        when: ansible_os_family == "OpenBSD" and ansible_kernel|float >= 5.4
+        with_items:
+          - mosh
+
+      - name: Install some essential packages on OpenBSD for versions 5.5 or later
+        openbsd_pkg: name={{ item }} state=present
+        when: ansible_os_family == "OpenBSD" and ansible_kernel|float >= 5.5
+        with_items:
+          - the_silver_searcher

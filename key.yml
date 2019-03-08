@@ -1,0 +1,6 @@
+---
+
+- hosts: all
+  tasks:
+    - name: Add ssh key to root
+      authorized_key: key="{{ lookup('file', ssh_key) }}" user=root

@@ -1,0 +1,38 @@
+---
+
+- hosts: all
+  tasks:
+      - name: Remove some non-essential packages on CentOS/RedHat
+        yum: name={{ item }} state=absent
+        when: ansible_os_family == "RedHat"
+        with_items:
+          - emacs
+          - mlocate
+          - nano
+          - wget
+
+      - name: Remove some non-essential packages on Debian
+        apt: name={{ item }} state=absent
+        when: ansible_os_family == "Debian"
+        with_items:
+          - emacs
+          - locate
+          - mlocate
+          - nano
+          - wget
+
+      - name: Remove some non-essential packages on FreeBSD
+        pkgng: name={{ item }} state=absent
+        when: ansible_os_family == "FreeBSD"
+        with_items:
+          - emacs
+          - nano
+          - wget
+
+      - name: Remove some non-essential packages on OpenBSD for all versions
+        openbsd_pkg: name={{ item }} state=absent
+        when: ansible_os_family == "OpenBSD"
+        with_items:
+          - emacs
+          - nano
+          - wget
